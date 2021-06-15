@@ -1,0 +1,59 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"type": "array",
+	"items":{
+	  "type": "object",
+	  "properties":
+	  {	
+		"empid":{
+		"type": "number",		
+		"not" : {
+			"enum" : [null]
+		}
+		},
+		"empName":{
+		"$ref": "#/definitions/non-empty-string",
+		"not" : {
+			"enum" : [null]
+		}
+		},
+		"email":{
+		"$ref": "#/definitions/non-empty-string",
+		"not" : {
+			"enum" : [null]
+		}
+		},
+		"age":{
+		"type": "number",
+		"not" : {
+			"enum" : [null]
+		}
+		},
+		"city":{
+		"$ref": "#/definitions/non-empty-string",
+		"not" : {
+			"enum" : [null]
+		}
+		},
+		"project":{
+		"$ref": "#/definitions/non-empty-string",
+		"not" : {
+			"enum" : [null]
+		}
+		},
+		"manager":{
+		"$ref": "#/definitions/non-empty-string",
+		"not" : {
+			"enum" : [null]
+		}
+		}
+	  },
+	  "required": ["empid","empName","email","age","project","manager"]
+	},
+	"definitions": {
+        "non-empty-string": {
+            "type": "string",
+            "minLength": 1
+        }
+	}
+}

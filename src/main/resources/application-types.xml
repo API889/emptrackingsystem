@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="employee" format="json">
+      <types:shape format="weave" example="examples/employee-6.json"><![CDATA[%dw 2.0
+
+type employee = Array<{|  empName: String,   age: String,   city: String,   email: String,   empid: String,   project: String,   manager: String|}> {"example": "[{\\\"empName\\\":\\\"sarah\\\",\\\"age\\\":\\\"28\\\",\\\"city\\\":\\\"delhi\\\",\\\"email\\\":\\\"sarah@gmail.com\\\",\\\"empid\\\":\\\"5\\\",\\\"project\\\":\\\"XYZComm\\\",\\\"manager\\\":\\\"James\\\"},{\\\"empName\\\":\\\"Henry\\\",\\\"age\\\":\\\"33\\\",\\\"city\\\":\\\"Hyd\\\",\\\"email\\\":\\\"henry123@gmail.com\\\",\\\"empid\\\":\\\"6\\\",\\\"project\\\":\\\"XYZComm\\\",\\\"manager\\\":\\\"James\\\"}]"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#0f30b26d-cdda-4290-960f-7828c03433f6"/>
+  <types:enrichment select="#59358893-971f-41f7-9903-8df0cc1e7b2c"/>
+</types:mule>

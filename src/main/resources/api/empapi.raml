@@ -1,0 +1,84 @@
+#%RAML 1.0
+title: empAPI
+types:
+  empdata: !include /emp_datatypes/emp_datatype.raml
+traits:
+  client-id-required:
+    queryParameters:
+      client-id:
+        description: client-id for the authentication purpose.
+        type: string
+        minLength: 5
+        required: true
+      client-secret:
+        description: client-secret for the authentication purpose.
+        type: string
+        minLength: 5
+        required: true 
+/employees:
+   /{id}:
+    is: [client-id-required]
+    get:      
+      responses:
+        200:
+          body:
+            application/json:
+              type: empdata[]
+              examples: 
+                output: !include /emp_examples/emp_examples.raml
+        400:
+          body:
+            application/json:
+              example: !include /emp_examples/ErrorResponse/400.json
+        401:
+          body:
+            application/json:
+              example: !include /emp_examples/ErrorResponse/401.json
+        404:
+          body:
+            application/json:
+              example: !include /emp_examples/ErrorResponse/404.json
+        500:
+          body:
+            application/json:
+              example: !include /emp_examples/ErrorResponse/500.json
+
+   post:
+    description: create employee data
+    body:
+      application/json:
+        example:
+          input: !include /emp_examples/emp_examples.raml
+    responses:
+      '200':
+        body:
+          application/json:
+            examples:
+                message: data inserted successfully
+
+   put:
+      description: Update employee data by empId
+      body:
+        application/json:
+          example:
+            input: !include /emp_examples/emp_examples.raml 
+      responses:
+        '200':
+            body:
+              application/json:
+                example: 
+                 message: data updated successfully
+
+   delete:
+      description: delete employee data by empId
+      queryParameters:
+         id:
+           type: number
+           required: true
+      responses:
+        200:
+            body:
+              application/json:
+                example: 
+                 message: data deleted sucessfully
+

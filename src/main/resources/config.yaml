@@ -1,0 +1,17 @@
+http:
+  port: "![MS1b5Dez6njRV6T4lZJQUg==]"
+  host: "![hHXdcrzofeB+PR8RmbyhdQ==]"
+
+db:
+  dport: "![9xKkWS9DKhnQNAIj4GHkXg==]"
+  dhost: "![hHXdcrzofeB+PR8RmbyhdQ==]"
+  dbname: "![CUsvMSsfe09irlzJ/ror2A==]"
+  dbuser: "![PTAuqW5vTRGGjKxR2S0aXQ==]"
+  passwd: "![tPcrz5qORWJa9EXYWiWb5A==]"
+
+sfdc:
+  username: "![oBmxAMJXiH6y7t3aINekoRj7EncGcREy8slyWALPIpw=]"
+  password: "![DIzeacP2lotEwJrr1Xtm9Q==]"
+  token: "![C/o6vZ73CU71yJOTez6X6Wagxnn7Aa8VBx77Wv/bKlg=]"
+
+

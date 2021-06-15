@@ -1,0 +1,17 @@
+[{
+"empName":"sarah",
+"age":"28",
+"city":"delhi",
+"empid":"5",
+"project":"XYZComm",
+"manager":"James"
+},
+{
+"empName":"Henry",
+"age":"33",
+"city":"Hyd",
+"empid":"6",
+"project":"XYZComm",
+"manager":"James"
+}
+]

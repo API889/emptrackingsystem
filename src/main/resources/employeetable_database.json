@@ -1,0 +1,10 @@
+[{"empId":1, "empName":"veena", "empEmail":"veena.vangala@gmail.com", "empAge":29, "city":"Hyd", "project":"ABC", "manager":"Ragalatha"},
+ {"empId":2, "empName":"swapna", "empEmail":"swapna.akuthota@gmail.com", "empAge":30, "city":"Hyd", "project":"ABC", "manager":"Ragalatha"},
+ {"empId":3, "empName":"suhas", "empEmail":"suhas.v@gmail.com", "empAge":26, "city":"Hyd", "project":"ABC", "manager":"Ragalatha"},
+ {"empId":4, "empName":"praveen", "empEmail":"praveen@gmail.com", "empAge":25, "city":"Hyd", "project":"ABC", "manager":"Ragalatha"},
+ {"empId":5, "empName":"balu", "empEmail":"balu.varagani@apisero.com", "empAge":26, "city":"Hyd", "project":"ABC", "manager":"Ragalatha"},
+ {"empId":8, "empName":"adithya", "empEmail":"aditya.jdd@gmail.com", "empAge":24, "city":"Hyd", "project":"ABC", "manager":"ragalatha"},
+ {"empId":12, "empName":"hjhdjhjd", "empEmail":"ffdfd@gmail.com", "empAge":22, "city":"Hyd", "project":"ABC", "manager":"ragalatha"},
+ {"empId":13, "empName":"rtytry", "empEmail":"rtrt@gmail.com", "empAge":22, "city":"Hyd", "project":"ABC", "manager":"Ragalatha"},
+ {"empId":15, "empName":"jkjkjk", "empEmail":"kjkjj@gmail.com", "empAge":22, "city":"Hyd", "project":"ABC", "manager":"Ragalatha"},
+ {"empId":16, "empName":"jkjhjjhkjk", "empEmail":"jhkjhkj@gmail.com", "empAge":22, "city":"Hyd", "project":"ABC", "manager":"Ragalatha"}]

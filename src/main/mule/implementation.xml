@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<json-logger:config name="JSON_Logger_Config" doc:name="JSON Logger Config" doc:id="9737e29e-102a-4063-a53f-e198b7d6c5e3" environment="${mule.env}" contentFieldsDataMasking="empEmail,project,manager"/>
+	<flow name="inserting-into-db" doc:id="e754c9b5-a71d-47bd-a00f-37f74ce862b6" >
+		<json:validate-schema doc:name="Validate schema" doc:id="ec374f44-45b9-4efb-9679-91c88e09c18a" schema="empSchema.json" />
+		<foreach doc:name="For Each" doc:id="436d57e7-2661-42e8-b5cb-51a092418c8f" >
+			<db:insert doc:name="Insert_employee_table" doc:id="83024c74-21b8-441d-beca-d0cd7810d226" config-ref="Database_Config">
+			<db:sql><![CDATA[insert into employee(empId,empName,empEmail,empAge,city,project,manager) values(:empId,:empName,:empEmail,:empAge,:city,:project,:manager)]]></db:sql>
+			<db:input-parameters><![CDATA[#[{empId:payload.empid,empName:payload.empName,empEmail:payload.email,empAge:payload.age,city:payload.city,project:payload.project,manager:payload.manager}]]]></db:input-parameters>
+		</db:insert>
+		</foreach>
+		<logger level="INFO" doc:name="Logger" doc:id="7325b5d5-972a-454f-83b7-8512cbace1d1" message='#["inserted into database "]'/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e0f99adf-ed86-44ac-bd38-bff11fdf477b" type="JSON:SCHEMA_NOT_HONOURED">
+				<file:write doc:name="Write" doc:id="434ee743-d4ca-45c9-8fc2-3710eb24191c" path="#['validatejson' ++ (now() as String {format:'yyyy-MM-dd-hh-mm-ss'}) ++ '.json']" mode="CREATE_NEW" config-ref="File_Config">
+					<file:content ><![CDATA[#[error.errorMessage]]]></file:content>
+				</file:write>
+				<logger level="INFO" doc:name="Logger" doc:id="690779f6-d576-42a9-8a4a-e28c4b500264" message='#["Error written in the file"]'/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="scheduler_sync_DB_SF" doc:id="3fdef410-31c0-4a70-b1fe-322ba99ab3ad">
+		<scheduler doc:name="Scheduler" doc:id="a4fa1392-1107-474e-a399-1c790187c032" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="10" timeUnit="SECONDS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<http:request method="GET" doc:name="Request" doc:id="a222e44c-93ce-4e13-a1fa-1fc5ad1c1235" path="/api/employees" config-ref="HTTP_Request_configuration">
+		</http:request>
+		<ee:transform doc:name="employee object mapping" doc:id="5fb3f713-9fc0-4b89-b28d-8bb31bd3027c">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map (item, index) -> {
+	EmpName__c: item.empName,
+	Age__c: item.empAge,
+	City__c: item.city,
+	Email__c:item.empEmail,
+	EmpID__c: item.empId,
+	Project__c: item.project,
+	Manager__c: item.manager
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+		<salesforce:upsert objectType="Employees__c" externalIdFieldName="EmpID__c" doc:name="employee object" doc:id="d84b279e-e205-4c1f-a9b5-ab913bf3309a" config-ref="Salesforce_Config" />
+		<logger level="INFO" doc:name="Logger" doc:id="b051eb06-8393-4e20-9685-e6292cb3b4ff" message='#["No new records"]' />
+	</flow>
+	<flow name="fetch-dbrecord-by-empid" doc:id="00b5bd1a-83eb-4b82-a64d-eb5bfeb3f815" >
+		<http:request method="GET" doc:name="Request by id" doc:id="1b68a4e8-43c1-4569-9ec2-5aa310007ecb" path="/api/employees/{id}" config-ref="HTTP_Request_configuration">
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"id" : attributes.uriParams.id
+}]]]></http:uri-params>
+		</http:request>
+		<ee:transform doc:name="DW json payload" doc:id="19d37d71-35b3-4c04-8a94-e60c515c47d8" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="delete-dbrecord-sync-sf" doc:id="05eeac3f-1444-461b-9d22-6980201726be" >
+		<set-variable value="#[attributes.queryParams.id as Number]" doc:name="employeeid" doc:id="45f70b7a-7ac6-49a6-95ae-d311b7d976f7" variableName="id" />
+		<db:delete doc:name="delete emp data" doc:id="e0fb7c9d-67ef-402c-ab70-45f236b74813" config-ref="Database_Config">
+			<db:sql ><![CDATA[delete from employee where empId = :id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{id:vars.id}]]]></db:input-parameters>
+		</db:delete>
+		<salesforce:query doc:name="get sfdc records" doc:id="fc5f7fbe-7d35-4ac1-b9bf-6566b74b87c0" config-ref="Salesforce_Config" >
+			<salesforce:salesforce-query ><![CDATA[select Id,EmpID__c,EmpName__c,Age__c,City__c,Email__c,Project__c,Manager__c from Employees__c where EmpID__c = :id]]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[{id:vars.id}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform doc:name="payload map" doc:id="62de5be1-dd15-4357-9673-95da96445915" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map {
+	Id : $.Id,
+	EmpName__c : $.EmpName__c,
+	Age__c : $.Age__c,
+	City__c : $.City__c,
+	Email__c : $.Email__c,
+	EmpID__c : $.EmpID__c,
+	Project__c : $.Project__c,
+	Manager__c : $.Manager__c 
+	}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<salesforce:delete doc:name="delete sf data" doc:id="b7ab3f85-2428-48de-870e-fe581284e614" config-ref="Salesforce_Config" >
+			<salesforce:ids ><![CDATA[#[payload.Id]]]></salesforce:ids>
+		</salesforce:delete>
+		<ee:transform doc:name="Json" doc:id="62f25386-57b5-4ca5-b859-8f5ddb1cc5eb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "deleted successfully"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="fc992cb5-39d9-45bd-8aab-fdbf9f1943b4" type="ANY">
+				<set-payload value='#["Error raised"]' doc:name="Set Payload" doc:id="be14467a-db04-448f-98b0-ce7b8fd61335" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="update-records-db2sf-flow" doc:id="2dafd0be-d2b1-4171-8b4d-f00abfa773a1" >
+		<json:validate-schema doc:name="Validate schema" doc:id="dca711f2-1481-4633-9b44-db5ad7bac800" schema="empSchema.json"/>
+		<ee:transform doc:name="Transform Message" doc:id="59358893-971f-41f7-9903-8df0cc1e7b2c">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+				</ee:message>
+				<ee:variables>
+				</ee:variables>
+			</ee:transform>
+		<foreach doc:name="FOREACH-employee-id" doc:id="1dd3aa04-7e7b-470b-afd6-4e6490955ea5">
+			<set-variable value="#[payload.empid]" doc:name="empoyeeid" doc:id="64706a7f-bc9f-439d-a779-c219acd0e63e" variableName="id" />
+			<db:update doc:name="update emp table" doc:id="c6196e45-2881-4c76-8774-c9061334b304" config-ref="Database_Config">
+			<db:sql><![CDATA[update employee set empEmail = :empEmail,empName = :empName,empAge = :empAge,city = :city,project = :project,manager = :manager where empId = :empId]]></db:sql>
+			<db:input-parameters><![CDATA[#[{empId:vars.id,empEmail:payload.email,empName:payload.empName,empAge:payload.age,city:payload.city,project:payload.project,manager:payload.manager}]]]></db:input-parameters>
+		</db:update>
+			<http:request method="GET" doc:name="Request by id" doc:id="d24c7d40-fe34-4b8d-9bed-6fab815b7375" path="/api/employees/{id}" config-ref="HTTP_Request_configuration">
+				<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"id" : vars.id
+}]]]></http:uri-params>
+			</http:request>
+			<ee:transform doc:name="DW map payload with salesfore custom object fields" doc:id="3e7b8292-66bf-44cf-9049-68ea700e3939">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map {
+	EmpName__c : $.empName,
+	Age__c : $.empAge,
+	City__c : $.city,
+	Email__c : $.empEmail,
+	EmpID__c : $.empId,
+	Project__c : $.project,
+	Manager__c : $.manager 
+	}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			<salesforce:upsert objectType="Employees__c" externalIdFieldName="EmpID__c" doc:name="update sf employee object" doc:id="cb4418b0-92ef-4186-9d9d-ae27f1acc914" config-ref="Salesforce_Config" />
+		</foreach>
+		<ee:transform doc:name="Transform Message" doc:id="2fdaed6b-225b-430b-a1fd-69f650d69ce0">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "updated successfully" 
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="344f2859-d0cc-446f-9b49-e16cd390e6d1" type="JSON:SCHEMA_NOT_HONOURED" >
+				<file:write doc:name="Write" doc:id="077f0034-6846-4c71-95c8-77f8156bd47c" path="#['validatejson' ++ (now() as String {format:'yyyy-MM-dd-hh-mm-ss'}) ++ '.json']" mode="CREATE_NEW" config-ref="File_Config">
+					<file:content ><![CDATA[#[error.errorMessage]]]></file:content>
+				</file:write>
+				<logger level="INFO" doc:name="Logger" doc:id="9b4d082a-3115-4d26-9f51-1bd06cf478d7" message='"Error written in the file"' />
+			</on-error-propagate>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="36ff8eb7-7151-4d65-84d2-3964669e36a7" type="DB:BAD_SQL_SYNTAX, DB:CONNECTIVITY, DB:QUERY_EXECUTION, DB:RETRY_EXHAUSTED, EMAIL:CONNECTIVITY, EMAIL:RETRY_EXHAUSTED, EMAIL:SEND, FILE:ACCESS_DENIED, FILE:CONNECTIVITY, FILE:FILE_ALREADY_EXISTS, FILE:FILE_LOCK, FILE:ILLEGAL_CONTENT, FILE:ILLEGAL_PATH, FILE:RETRY_EXHAUSTED, JSON:INVALID_INPUT_JSON, JSON:INVALID_SCHEMA, JSON:SCHEMA_NOT_FOUND, SALESFORCE:CONNECTIVITY, SALESFORCE:INVALID_INPUT, SALESFORCE:INVALID_RESPONSE, SALESFORCE:LIMIT_EXCEEDED, SALESFORCE:MUTUAL_AUTHENTICATION_FAILED, SALESFORCE:NOT_FOUND, SALESFORCE:RETRY_EXHAUSTED, SALESFORCE:TIMEOUT, EXPRESSION, STREAM_MAXIMUM_SIZE_EXCEEDED">
+				<email:send doc:name="Send" doc:id="56f8edf1-0290-4255-ab0b-cdcba2574df4" fromAddress="veena.vangala@gmail.com" subject='#["error in writing csv"]' config-ref="Email_SMTP">
+					<email:to-addresses>
+						<email:to-address value="veena.vangala@apisero.com" />
+						<email:to-address value="praveen.anugu@apisero.com" />
+						<email:to-address value="suhas.v@apisero.com" />
+						<email:to-address value="swapna.akuthota@apisero.com" />
+						<email:to-address value="kiran.indugula@apisero.com" />
+					</email:to-addresses>
+					<email:body contentType="application/json">
+						<email:content><![CDATA[#[error.errorMessage]]]></email:content>
+					</email:body>
+				</email:send>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="write-csv-flow" doc:id="c85bb38b-9691-444f-9f2d-df25f5ced16b">
+		<scheduler doc:name="Scheduler" doc:id="718ac239-0a82-47ce-8149-9690678243ba" >
+			<scheduling-strategy >
+				<cron expression="0 0 20 * * ?" timeZone="Canada/Central" />
+			</scheduling-strategy>
+		</scheduler>
+		<http:request method="GET" doc:name="Request" doc:id="66d61cde-00da-4aaf-ad9a-7e8e89693966" path="/api/employees" config-ref="HTTP_Request_configuration">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"client-id" : attributes.queryParams.'client-id',
+	"client-secret" : attributes.queryParams.'client-secret'
+}]]]></http:query-params>
+		</http:request>
+		<file:write doc:name="write csv file" doc:id="377bd84d-3c73-475a-bfaa-f4bda86c24e9" path="#['Employeedata' ++ (now() as String {format:'yyyy-MM-dd-hh-mm-ss'}) ++ '.csv']" config-ref="File_Config">
+					<file:content><![CDATA[#[output application/csv header=false --- payload]]]></file:content>
+				</file:write>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="fe0c0999-0c8c-4d47-93b0-e866ff40611c" type="ANY">
+				<email:send doc:name="Send" doc:id="a8dce66b-3bd6-4589-9852-e859b7633bb8" subject='#["error in writing csv"]' fromAddress="veena.vangala@gmail.com" config-ref="Email_SMTP">
+					<email:to-addresses >
+						<email:to-address value="veena.vangala@apisero.com" />
+						<email:to-address value="praveen.anugu@apisero.com" />
+						<email:to-address value="suhas.v@apisero.com" />
+						<email:to-address value="swapna.akuthota@apisero.com" />
+						<email:to-address value="kiran.indugula@apisero.com" />
+					</email:to-addresses>
+					<email:body contentType="application/json">
+						<email:content ><![CDATA[#[error.errorMessage]]]></email:content>
+					</email:body>
+				</email:send>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>
